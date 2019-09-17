@@ -1,57 +1,84 @@
 {
-	"name": "gitassumeunchanged",
-	"displayName": "GitAssumeUnchanged",
-	"description": "",
-	"version": "0.0.1",
-	"engines": {
-		"vscode": "^1.38.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"activationEvents": [
-		"onCommand:extension.assumeUnchanged"
-	],
-	"main": "./out/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "extension.assumeUnchanged",
-				"title": "Assume unchanged",
-				"icon": {
-					"dark": "images/icons8-carpet-cleaning-16-filled.svg",
-					"light": "images/carpet-light.svg"
-				}
-			}
-		],
-		"menus": {
-			"explorer/context": [{
-				"when": "resourceLangId == typescript",
-				"command": "extension.assumeUnchanged",
-				"group": "YourGroup@1"
-			}],
-			"scm/resourceState/context": [{
-				"command": "extension.assumeUnchanged",
-				"group": "inline"
-			}]
-		}
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/glob": "^7.1.1",
-		"@types/mocha": "^5.2.6",
-		"@types/node": "^10.12.21",
-		"@types/vscode": "^1.38.0",
-		"glob": "^7.1.4",
-		"mocha": "^6.1.4",
-		"typescript": "^3.3.1",
-		"tslint": "^5.12.1",
-		"vscode-test": "^1.2.0"
-	}
+  "name": "gitassumeunchanged",
+  "displayName": "GitAssumeUnchanged",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.38.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension.assumeUnchanged"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "git-assume-unchanged",
+          "title": "Git Assume Unchanged",
+          "icon": "images/icons8-carpet-cleaning-16-filled.svg"
+        }
+      ]
+    },
+    "views": {
+      "git-assume-unchanged": [
+        {
+          "id": "nodeDependencies",
+          "name": "Node Dependencies"
+        }
+      ],
+      "scm": [
+        {
+          "id": "gauAssumedUnchanged",
+          "name": "Assumed Unchanged"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "extension.assumeUnchanged",
+        "title": "Assume unchanged",
+        "icon": {
+          "dark": "images/icons8-carpet-cleaning-16-filled.svg",
+          "light": "images/icons8-carpet-cleaning-16.svg"
+        }
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "when": "resourceLangId == typescript",
+          "command": "extension.assumeUnchanged",
+          "group": "YourGroup@1"
+        }
+      ],
+      "scm/resourceState/context": [
+        {
+          "command": "extension.assumeUnchanged",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^10.12.21",
+    "@types/vscode": "^1.38.0",
+    "glob": "^7.1.4",
+    "mocha": "^6.1.4",
+    "typescript": "^3.3.1",
+    "tslint": "^5.12.1",
+    "vscode-test": "^1.2.0"
+  }
 }

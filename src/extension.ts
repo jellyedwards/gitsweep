@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { runGitCommandInTerminal } from './terminal';
+import { GauProvider, Dependency } from './gauProvider';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -11,6 +12,9 @@ export function activate(context: vscode.ExtensionContext) {
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "gitassumeunchanged" is now active!');
 
+	const gauAssumedUnchangedProvider = new GauProvider(vscode.workspace.workspaceFolders);
+	vscode.window.registerTreeDataProvider('gauAssumedUnchanged', gauAssumedUnchangedProvider);
+
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
@@ -19,7 +23,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Display a message box to the user
 		vscode.window.showInformationMessage('Hello VS Code! ' + file.resourceUri.fsPath);
-		runGitCommandInTerminal(context, 'status', '', '', true);
+		// runGitCommandInTerminal(context, 
+		// 	'update-index', 
+		// 	'--assume-unchanged ' + file.resourceUri.fsPath, 
+		// 	'', true);
+		runGitCommandInTerminal(context, 'ls-files', '-v', '', true);
 	});
 
 	context.subscriptions.push(disposable);
