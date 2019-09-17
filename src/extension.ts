@@ -18,26 +18,33 @@ export function activate(context: vscode.ExtensionContext) {
 	const cwd = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri.fsPath : './';
 
 	// TODOJL: skip worktree might be better: http://blog.stephan-partzsch.de/how-to-ignore-changes-in-tracked-files-with-git/
-	context.subscriptions.push(vscode.commands.registerCommand('extension.assumeUnchanged', (file) => {
+	const updateIndex = (filename: String, undo: Boolean = false) => {
 		try {
-			cp.execSync('git update-index --assume-unchanged ' + file.resourceUri.fsPath, { cwd });
-			vscode.window.showInformationMessage('Assuming not unchanged: ' + file.resourceUri.fsPath);
+			const arg = undo ? '--no-assume-unchanged' : '--assume-unchanged';
+			const msg = undo ? 'Undo assume unchanged' : 'Assuming unchanged';
+
+			cp.execSync(`git update-index ${arg} ${filename}`, { cwd });
+			vscode.window.showInformationMessage(`${msg} ${filename}`);
 			gauAssumedUnchangedProvider.refresh();
 			vscode.commands.executeCommand('git.refresh');
 		} catch (err) {
 			vscode.window.showErrorMessage(err.message);
 		}
+	};
+
+	// TODOJL: if the file isn't in the repo already add it to the exclude dir
+	// this project does that already: https://github.com/BouKiCHi/git-exclude/blob/4837b0bbca08c2100457c3fe0c80d9a249dcc2ca/src/extension.ts
+	// but it assumes .git is in the workspace root
+	// git rev-parse --show-toplevel
+	// gives the actual git repo location
+	// git ls-files --others
+	// shows them
+	context.subscriptions.push(vscode.commands.registerCommand('extension.assumeUnchanged', (file) => {
+		updateIndex(file.resourceUri.fsPath);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.noAssumeUnchanged', (item) => {
-		try {
-			cp.execSync('git update-index --no-assume-unchanged ' + item.filename, { cwd });
-			vscode.window.showInformationMessage('Assuming not unchanged: ' + item.filename);
-			gauAssumedUnchangedProvider.refresh();
-			vscode.commands.executeCommand('git.refresh');
-		} catch (err) {
-			vscode.window.showErrorMessage(err.message);
-		}
+		updateIndex(item.filename, true);
 	}));
 }
 
