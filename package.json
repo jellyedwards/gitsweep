@@ -10,20 +10,29 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:extension.helloWorld"
+		"onCommand:extension.assumeUnchanged"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "extension.helloWorld",
-				"title": "Hello World"
+				"command": "extension.assumeUnchanged",
+				"title": "Assume unchanged",
+				"icon": {
+					"dark": "images/icons8-carpet-cleaning-16-filled.svg",
+					"light": "images/carpet-light.svg"
+				}
 			}
 		],
 		"menus": {
 			"explorer/context": [{
 				"when": "resourceLangId == typescript",
-				"command": "extenstion.helloWorld"
+				"command": "extension.assumeUnchanged",
+				"group": "YourGroup@1"
+			}],
+			"scm/resourceState/context": [{
+				"command": "extension.assumeUnchanged",
+				"group": "inline"
 			}]
 		}
 	},
