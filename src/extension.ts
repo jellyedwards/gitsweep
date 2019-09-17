@@ -1,8 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { runGitCommandInTerminal } from './terminal';
-import { GauProvider, Dependency } from './gauProvider';
+import { GauProvider, AssumedUnchangedFile } from './gauProvider';
+import * as cp from 'child_process';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -15,22 +15,30 @@ export function activate(context: vscode.ExtensionContext) {
 	const gauAssumedUnchangedProvider = new GauProvider(vscode.workspace.workspaceFolders);
 	vscode.window.registerTreeDataProvider('gauAssumedUnchanged', gauAssumedUnchangedProvider);
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('extension.assumeUnchanged', (file) => {
-		// The code you place here will be executed every time your command is executed
+	const cwd = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri.fsPath : './';
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello VS Code! ' + file.resourceUri.fsPath);
-		// runGitCommandInTerminal(context, 
-		// 	'update-index', 
-		// 	'--assume-unchanged ' + file.resourceUri.fsPath, 
-		// 	'', true);
-		runGitCommandInTerminal(context, 'ls-files', '-v', '', true);
-	});
+	// TODOJL: skip worktree might be better: http://blog.stephan-partzsch.de/how-to-ignore-changes-in-tracked-files-with-git/
+	context.subscriptions.push(vscode.commands.registerCommand('extension.assumeUnchanged', (file) => {
+		try {
+			cp.execSync('git update-index --assume-unchanged ' + file.resourceUri.fsPath, { cwd });
+			vscode.window.showInformationMessage('Assuming not unchanged: ' + file.resourceUri.fsPath);
+			gauAssumedUnchangedProvider.refresh();
+			vscode.commands.executeCommand('git.refresh');
+		} catch (err) {
+			vscode.window.showErrorMessage(err.message);
+		}
+	}));
 
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(vscode.commands.registerCommand('extension.noAssumeUnchanged', (item) => {
+		try {
+			cp.execSync('git update-index --no-assume-unchanged ' + item.filename, { cwd });
+			vscode.window.showInformationMessage('Assuming not unchanged: ' + item.filename);
+			gauAssumedUnchangedProvider.refresh();
+			vscode.commands.executeCommand('git.refresh');
+		} catch (err) {
+			vscode.window.showErrorMessage(err.message);
+		}
+	}));
 }
 
 // this method is called when your extension is deactivated

@@ -10,26 +10,12 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:extension.assumeUnchanged"
+	"onCommand:extension.assumeUnchanged",
+	"onView:gauAssumedUnchanged"
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "git-assume-unchanged",
-          "title": "Git Assume Unchanged",
-          "icon": "images/icons8-carpet-cleaning-16-filled.svg"
-        }
-      ]
-    },
     "views": {
-      "git-assume-unchanged": [
-        {
-          "id": "nodeDependencies",
-          "name": "Node Dependencies"
-        }
-      ],
       "scm": [
         {
           "id": "gauAssumedUnchanged",
@@ -45,22 +31,29 @@
           "dark": "images/icons8-carpet-cleaning-16-filled.svg",
           "light": "images/icons8-carpet-cleaning-16.svg"
         }
-      }
+	  },
+	  {
+        "command": "extension.noAssumeUnchanged",
+        "title": "Undo assume unchanged",
+        "icon": {
+          "dark": "images/icons8-carpet-16-filled.svg",
+          "light": "images/icons8-carpet-16.svg"
+        }
+	  }
     ],
     "menus": {
-      "explorer/context": [
-        {
-          "when": "resourceLangId == typescript",
-          "command": "extension.assumeUnchanged",
-          "group": "YourGroup@1"
-        }
-      ],
       "scm/resourceState/context": [
         {
           "command": "extension.assumeUnchanged",
           "group": "inline"
         }
-      ]
+	  ],
+      "view/item/context": [
+        {
+          "command": "extension.noAssumeUnchanged",
+          "group": "inline"
+        }
+	  ]
     }
   },
   "scripts": {

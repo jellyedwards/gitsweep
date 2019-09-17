@@ -1,35 +1,50 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as cp from 'child_process';
 
-export class GauProvider implements vscode.TreeDataProvider<Dependency> {
+export class GauProvider implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 
-	private _onDidChangeTreeData: vscode.EventEmitter<Dependency | undefined> = new vscode.EventEmitter<Dependency | undefined>();
-	readonly onDidChangeTreeData: vscode.Event<Dependency | undefined> = this._onDidChangeTreeData.event;
+	private _onDidChangeTreeData: vscode.EventEmitter<AssumedUnchangedFile | undefined> = new vscode.EventEmitter<AssumedUnchangedFile | undefined>();
+	readonly onDidChangeTreeData: vscode.Event<AssumedUnchangedFile | undefined> = this._onDidChangeTreeData.event;
 
 	constructor(private workspaceRoot: vscode.WorkspaceFolder[] | undefined) {
+		vscode.commands.registerCommand('xyz.hello', () => vscode.window.showInformationMessage("Hi"));
 	}
 
 	refresh(): void {
 		this._onDidChangeTreeData.fire();
 	}
 
-	getTreeItem(element: Dependency): vscode.TreeItem {
+	getTreeItem(element: AssumedUnchangedFile): vscode.TreeItem {
 		return element;
 	}
 
-	getChildren(element?: Dependency): Thenable<Dependency[]> {
+	getChildren(element?: AssumedUnchangedFile): Thenable<AssumedUnchangedFile[]> {
 		if (!this.workspaceRoot) {
 			vscode.window.showInformationMessage('No dependency in empty workspace');
 			return Promise.resolve([]);
 		}
 
-		if (element) {
-            return Promise.resolve([new Dependency('a'), new Dependency('b'), new Dependency('c')]);
-            //Promise.resolve(this.getDepsInPackageJson(path.join(this.workspaceRoot, 'node_modules', element.label, 'package.json')));
-		} else {
-            return Promise.resolve([new Dependency('d'), new Dependency('e'), new Dependency('f')]);
-		}
+		const cwd = this.workspaceRoot[0].uri.fsPath;
+		// const handleCp = (err: any, stdout: any, stderr: any) => {
+		// 	// console.log('stdout', stdout);
+		// 	if (err) {
+		// 		console.log('stderr: ', stderr);
+		// 		console.log('error: ' + err);
+
+		// 		return [];
+		// 	} else {
+		// 		return stdout;
+		// 	}
+		// };
+
+		const gitls = cp.execSync('git ls-files -v', {cwd});//, handleCp);
+		const assumedUnchangedFiles = gitls.toString().split(/\n/)
+			.filter(a => /^[a-z]/.test(a))
+			.map(line => line.split(" ")[1]);
+		return Promise.resolve(assumedUnchangedFiles
+			.map(file => new AssumedUnchangedFile(path.join(cwd, file))));
 	}
 
 	private pathExists(p: string): boolean {
@@ -43,21 +58,21 @@ export class GauProvider implements vscode.TreeDataProvider<Dependency> {
 	}
 }
 
-export class Dependency extends vscode.TreeItem {
+export class AssumedUnchangedFile extends vscode.TreeItem {
 
 	constructor(
-		public readonly label: string,
+		public readonly filename: string,
 		public readonly command?: vscode.Command
 	) {
-		super(label, vscode.TreeItemCollapsibleState.None);
+		super(path.basename(filename), vscode.TreeItemCollapsibleState.None);
 	}
 
 	get tooltip(): string {
-		return `${this.label}`;
+		return `${this.filename}`;
 	}
 
 	get description(): string {
-		return this.label;
+		return this.filename;
 	}
 
 	// iconPath = {
