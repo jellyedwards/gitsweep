@@ -1,6 +1,6 @@
 {
-  "name": "gitassumeunchanged",
-  "displayName": "GitAssumeUnchanged",
+  "name": "gitsweep",
+  "displayName": "GitSweep",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -10,31 +10,31 @@
     "Other"
   ],
   "activationEvents": [
-	"onCommand:extension.assumeUnchanged",
-	"onView:gauAssumedUnchanged"
+	"onCommand:gitSweep.sweep",
+	"onView:gitSweep"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "views": {
       "scm": [
         {
-          "id": "gauAssumedUnchanged",
-          "name": "Assumed Unchanged"
+          "id": "gitSweep",
+          "name": "GitSweep: Under the rug"
         }
       ]
     },
     "commands": [
       {
-        "command": "extension.assumeUnchanged",
-        "title": "Assume unchanged",
+        "command": "gitSweep.sweep",
+        "title": "Sweep under the rug",
         "icon": {
           "dark": "images/icons8-carpet-cleaning-16-filled.svg",
           "light": "images/icons8-carpet-cleaning-16.svg"
         }
 	  },
 	  {
-        "command": "extension.noAssumeUnchanged",
-        "title": "Undo assume unchanged",
+        "command": "gitSweep.unsweep",
+        "title": "Restore",
         "icon": {
           "dark": "images/icons8-carpet-16-filled.svg",
           "light": "images/icons8-carpet-16.svg"
@@ -44,13 +44,13 @@
     "menus": {
       "scm/resourceState/context": [
         {
-          "command": "extension.assumeUnchanged",
+          "command": "gitSweep.sweep",
           "group": "inline"
         }
 	  ],
       "view/item/context": [
         {
-          "command": "extension.noAssumeUnchanged",
+          "command": "gitSweep.unsweep",
           "group": "inline"
         }
 	  ]
