@@ -21,13 +21,18 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 		const cwd = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri.fsPath : './';
 		this.gitRoot = cp.execSync('git rev-parse --show-toplevel', { cwd }).toString().replace(/\n$/, '');
 		this.pathToExclude = path.join(this.gitRoot, '.git', 'info', 'exclude');
+
+		vscode.commands.registerCommand('gitSweep.openFile', (file) => {
+			vscode.workspace.openTextDocument(file).then(doc => {
+				vscode.window.showTextDocument(doc);
+			  });
+		});
 	}
 
 	sweepFile(path: string) {
 		if (this.fileInRepo(path)) {
 			this.skip(path);
 		} else {
-			//excludeFile(item.resourceUri.path.replace(gitRoot, '').replace('//', '/'));
 			this.excludeFile(path);
 		}
 
@@ -166,7 +171,7 @@ class AssumedUnchangedFile extends vscode.TreeItem {
 		public readonly type: string,
 		public readonly filename: string,
 		public readonly gitRoot: string,
-		public readonly command?: vscode.Command	// command exec'd when selected
+//		public readonly command?: vscode.Command	// command exec'd when selected
 	) {
 		super(vscode.Uri.file(path.join(gitRoot, filename)),
 			vscode.TreeItemCollapsibleState.None);
@@ -183,6 +188,12 @@ class AssumedUnchangedFile extends vscode.TreeItem {
 	get description(): string {
 		return this.filename;
 	}
+
+	get command(): vscode.Command {
+		return { command: 'gitSweep.openFile', title: "Open File", arguments: [this.resourceUri] };
+	}
+
+	contextValue = 'file';
 
 	// iconPath = {
 	// 	light: path.join(__filename, '..', '..', 'resources', 'light', 'dependency.svg'),
