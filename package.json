@@ -10,8 +10,8 @@
     "Other"
   ],
   "activationEvents": [
-	"onCommand:gitSweep.sweep",
-	"onView:gitSweep"
+    "onCommand:gitSweep.sweep",
+    "onView:gitSweep"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -31,15 +31,19 @@
           "dark": "images/icons8-carpet-cleaning-16-filled.svg",
           "light": "images/icons8-carpet-cleaning-16.svg"
         }
-	  },
-	  {
+      },
+      {
         "command": "gitSweep.unsweep",
         "title": "Restore",
         "icon": {
           "dark": "images/icons8-carpet-16-filled.svg",
           "light": "images/icons8-carpet-16.svg"
         }
-	  }
+      },
+      {
+        "command": "gitSweep.refresh",
+        "title": "Refresh"
+      }
     ],
     "menus": {
       "scm/resourceState/context": [
@@ -47,13 +51,19 @@
           "command": "gitSweep.sweep",
           "group": "inline"
         }
-	  ],
+      ],
       "view/item/context": [
         {
           "command": "gitSweep.unsweep",
           "group": "inline"
         }
-	  ]
+      ],
+      "view/title": [
+        {
+          "command": "gitSweep.refresh",
+          "group": "navigation"
+        }
+      ]
     }
   },
   "scripts": {

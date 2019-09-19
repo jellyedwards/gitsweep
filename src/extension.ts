@@ -24,6 +24,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('gitSweep.unsweep', (item) => {
 		gitSweep.unsweepFile(item.path, item.type);
 	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('gitSweep.refresh', () => {
+		gitSweep.refresh();
+	}));
 }
 
 // this method is called when your extension is deactivated
