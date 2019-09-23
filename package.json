@@ -3,6 +3,7 @@
   "displayName": "GitSweep",
   "description": "",
   "version": "0.0.1",
+  "publisher": "syntax.ie",
   "engines": {
     "vscode": "^1.38.0"
   },
