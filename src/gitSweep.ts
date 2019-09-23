@@ -63,14 +63,15 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 		return element;
 	}
 
-	getChildren(element?: AssumedUnchangedFile): Thenable<AssumedUnchangedFile[]> {
+	getChildren(): Thenable<AssumedUnchangedFile[]> {
 		// get the files that are skipped or assume-unchanged
 		const gitls = cp.execSync('git ls-files -v', {cwd: this.gitRoot});
 		const assumedUnchangedFiles = gitls.toString().split(/\n/)
-			.filter(a => /^[a-zS]/.test(a))
+			.filter(a => /^[a-zS]/.test(a))	// must start with a lowercase letter or capital S
 			.map(line => {
 				const parts = line.split(" ");
 				let type = IgnoreEnum.SkipWorktree;
+				// if it's a lowercase letter it's been --assume-unchanged
 				if (parts[0] === parts[0].toLowerCase()) {
 					type = IgnoreEnum.AssumeUnchanged;
 				}
@@ -87,19 +88,10 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 			.filter(e => /^(?!\s*#).+/.test(e))
 			.map(line => ({ type: IgnoreEnum.Excluded, path: line}));
 
+		// return a list of both skipped and excluded files
 		return Promise.resolve(assumedUnchangedFiles.concat(excludedFiles)
 			.map(file => new AssumedUnchangedFile(file.type, file.path, this.gitRoot)));
 	}
-
-	// private pathExists(p: string): boolean {
-	// 	try {
-	// 		fs.accessSync(p);
-	// 	} catch (err) {
-	// 		return false;
-	// 	}
-
-	// 	return true;
-	// }
 
 	private fileInRepo = (filename: string) => {
 		try {
@@ -116,12 +108,8 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 			const prefix = fs.readFileSync(this.pathToExclude).toString().endsWith('\n') ? '' : '\n';
 
 			fs.appendFileSync(this.pathToExclude, prefix + filename + '\n');
-			
-			return true;
 		} catch (err) {
-			console.error("couldn't exclude file ", err);
-
-			return false;
+			vscode.window.showErrorMessage("Couldn't exclude file", err.message);
 		}
 	}
 
@@ -142,14 +130,12 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 				.replace(filename, ''); // or if there wasn't a newline after it
 
 			fs.writeFileSync(this.pathToExclude, newExclude);
-			
-			return true;
 		} catch(err) {
-			console.error("couldn't include file ", err);
-			return false;
+			vscode.window.showErrorMessage("Couldn't include file", err.message);
 		}
 	}
 
+	// generic updateIndex for assume, no-assume, skip and no-skip (below)
 	private updateIndex = (filename: String, arg: string, msg: string) => {
 		try {
 			cp.execSync(`git update-index ${arg} ${filename}`, { cwd: this.gitRoot });
@@ -171,7 +157,6 @@ class AssumedUnchangedFile extends vscode.TreeItem {
 		public readonly type: string,
 		public readonly filename: string,
 		public readonly gitRoot: string,
-//		public readonly command?: vscode.Command	// command exec'd when selected
 	) {
 		super(vscode.Uri.file(path.join(gitRoot, filename)),
 			vscode.TreeItemCollapsibleState.None);
@@ -194,9 +179,4 @@ class AssumedUnchangedFile extends vscode.TreeItem {
 	}
 
 	contextValue = 'file';
-
-	// iconPath = {
-	// 	light: path.join(__filename, '..', '..', 'resources', 'light', 'dependency.svg'),
-	// 	dark: path.join(__filename, '..', '..', 'resources', 'dark', 'dependency.svg')
-	// };
 }
