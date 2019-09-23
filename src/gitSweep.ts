@@ -70,15 +70,16 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 			.filter(a => /^[a-zS]/.test(a))	// must start with a lowercase letter or capital S
 			.map(line => {
 				const parts = line.split(" ");
+				const [typeLetter, path] = parts;
 				let type = IgnoreEnum.SkipWorktree;
 				// if it's a lowercase letter it's been --assume-unchanged
-				if (parts[0] === parts[0].toLowerCase()) {
+				if (typeLetter === typeLetter.toLowerCase()) {
 					type = IgnoreEnum.AssumeUnchanged;
 				}
 
 				return {
 					type,
-					path: parts[1]
+					path
 				};
 			});
 
