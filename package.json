@@ -1,9 +1,14 @@
 {
   "name": "gitsweep",
   "displayName": "GitSweep",
-  "description": "",
+  "description": "Exclude files from git",
+  "icon": "images/icons8-carpet-cleaning-256.png",
+  "galleryBanner": {
+    "color": "#C80000",
+    "theme": "dark"
+  },
   "version": "0.0.1",
-  "publisher": "syntaxie",
+  "publisher": "jellyedwards",
   "repository": {
     "type" : "git",
     "url" : "https://github.com/jellyedwards/gitsweep"
