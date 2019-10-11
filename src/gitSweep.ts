@@ -41,7 +41,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 	}
 
 	unsweepFile(path: string, type: string) {
-		if (this.fileInRepo(path)) {
+		if (type !== IgnoreEnum.Excluded) {
 			if (type === IgnoreEnum.AssumeUnchanged) {
 				this.dontAssume(path);
 			} else {
@@ -125,10 +125,13 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 	private includeFile = (filename: string) => {
 		try {
 			filename = this.shortenPath(filename);
+			// TODO come up with a reg ex, this isn't very confidence inspiring!
 			const newExclude = fs.readFileSync(this.pathToExclude)
 				.toString()
 				.replace(filename+'\n', '')
-				.replace(filename, ''); // or if there wasn't a newline after it
+				.replace(filename, '') // or if there wasn't a newline after it
+				.replace(filename.replace('/', '')+'\n', '') // or if no leading /
+				.replace(filename.replace('/', ''), '');
 
 			fs.writeFileSync(this.pathToExclude, newExclude);
 		} catch(err) {
