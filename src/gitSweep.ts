@@ -118,20 +118,21 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 		return s.replace(/\\/g, '/');
 	}
 
-	private shortenPath(p: string) {
-		return (this.forwardSlashes(p).replace(this.forwardSlashes(this.gitRoot), ''));
+	private shortenPath(path: string, removeLeadingSlash: boolean=false) {
+		const toRemove = this.forwardSlashes(this.gitRoot) + (removeLeadingSlash ? '/' : '');
+		return (this.forwardSlashes(path).replace(toRemove, ''));
 	}
 
 	private includeFile = (filename: string) => {
 		try {
-			filename = this.shortenPath(filename);
-			// TODO come up with a reg ex, this isn't very confidence inspiring!
-			const newExclude = fs.readFileSync(this.pathToExclude)
-				.toString()
-				.replace(filename+'\n', '')
-				.replace(filename, '') // or if there wasn't a newline after it
-				.replace(filename.replace('/', '')+'\n', '') // or if no leading /
-				.replace(filename.replace('/', ''), '');
+			filename = this.shortenPath(filename, true);
+			const fileContents = fs.readFileSync(this.pathToExclude).toString();
+			// match the previous new line if there was one:	\v{0,1}
+			// then it might start with a ./ or a / or neither: ^(\.\/|\/){0,1}
+			// then it should match the filename
+			const pattern = `(\v{0,1}^(\.\/|\/){0,1}${filename})`;
+			const regex = new RegExp(pattern, 'ms');
+			const newExclude = fileContents.replace(regex, '');
 
 			fs.writeFileSync(this.pathToExclude, newExclude);
 		} catch(err) {
