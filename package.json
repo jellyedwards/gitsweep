@@ -65,12 +65,14 @@
       "view/item/context": [
         {
           "command": "gitSweep.unsweep",
+          "when": "view == gitSweep",
           "group": "inline"
         }
       ],
       "view/title": [
         {
           "command": "gitSweep.refresh",
+          "when": "view == gitSweep",
           "group": "navigation"
         }
       ]
