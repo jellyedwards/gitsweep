@@ -20,7 +20,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:gitSweep.sweep",
+    "workspaceContains:.git",
     "onView:gitSweep"
   ],
   "main": "./out/extension.js",
