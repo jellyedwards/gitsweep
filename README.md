@@ -1,34 +1,26 @@
-# gitsweep README
+# GitSweep README
 
-GitSweep is a VS Code extension which allows you to easily exclude modified or new files from git so they don't get committed accidentally. 
+GitSweep is a VS Code extension which allows you to easily exclude modified or new files so they don't get committed accidentally. 
 
 ## Features
 
+![gitsweep in action](images/gitSweep.gif)
 
-// screen to gif
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+GitSweep uses git's --skip-worktree and .git/info/exclude to exclude changed files that you don't want to accidentally commit.
 
-For example if there is an image subfolder under your extension project workspace:
+Excluded files are shown in a GitSweep window under the normal git window so you can see which files are changed and include the files again when necessary.
 
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-
+<!-- TODO config for skip-worktree or assume-unchanged
 ## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
 
 This extension contributes the following settings:
 
 * `myExtension.enable`: enable/disable this extension
 * `myExtension.thing`: set to `blah` to do something
+-->
+## Known Issues/TODOs
 
-<!-- ## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension. -->
+* Selecting multiple files and clicking the sweep icon only commits one file
 
 ## Release Notes
 
@@ -37,4 +29,4 @@ Calling out known issues can help limit users opening duplicate issues against y
 Initial release of GitSweep.
 
 ## Thanks to...
-[Icons8](https://icons8.com) for the icons
+[Icons8](https://icons8.com) and [vscode-icons](https://github.com/microsoft/vscode-icons) for icons
