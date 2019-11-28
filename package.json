@@ -36,7 +36,7 @@
     "commands": [
       {
         "command": "gitSweep.sweep",
-        "title": "Sweep under the rug",
+        "title": "GitSweep: Sweep under the rug",
         "icon": {
           "dark": "images/icons8-carpet-cleaning-16-filled.svg",
           "light": "images/icons8-carpet-cleaning-16.svg"
@@ -44,7 +44,7 @@
       },
       {
         "command": "gitSweep.unsweep",
-        "title": "Restore",
+        "title": "GitSweep: Restore",
         "icon": {
           "dark": "images/icons8-carpet-16-filled.svg",
           "light": "images/icons8-carpet-16.svg"
@@ -52,7 +52,7 @@
       },
       {
         "command": "gitSweep.refresh",
-        "title": "Refresh"
+        "title": "GitSweep: Refresh"
       }
     ],
     "menus": {
@@ -83,7 +83,8 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "build": "vsce package"
   },
   "devDependencies": {
     "@types/glob": "^7.1.1",
@@ -94,6 +95,7 @@
     "mocha": "^6.1.4",
     "typescript": "^3.3.1",
     "tslint": "^5.12.1",
-    "vscode-test": "^1.2.0"
+    "vscode-test": "^1.2.0",
+    "vsce": "^1.69.0"
   }
 }

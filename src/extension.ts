@@ -6,6 +6,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const gitSweep = new GitSweep();
 	vscode.window.registerTreeDataProvider('gitSweep', gitSweep);
 
+	// TODO handle when multiple files are selected
 	// called whenever a file is to be ignored
 	context.subscriptions.push(vscode.commands.registerCommand('gitSweep.sweep', (item) => {
 		gitSweep.sweepFile(item.resourceUri.fsPath);
