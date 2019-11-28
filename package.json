@@ -38,21 +38,25 @@
         "command": "gitSweep.sweep",
         "title": "GitSweep: Sweep under the rug",
         "icon": {
-          "dark": "images/icons8-carpet-cleaning-16-filled.svg",
-          "light": "images/icons8-carpet-cleaning-16.svg"
+          "dark": "images/dark/icons8-carpet-cleaning-16.svg",
+          "light": "images/light/icons8-carpet-cleaning-16.svg"
         }
       },
       {
         "command": "gitSweep.unsweep",
         "title": "GitSweep: Restore",
         "icon": {
-          "dark": "images/icons8-carpet-16-filled.svg",
-          "light": "images/icons8-carpet-16.svg"
+          "dark": "images/dark/icons8-carpet-16.svg",
+          "light": "images/light/icons8-carpet-16.svg"
         }
       },
       {
         "command": "gitSweep.refresh",
-        "title": "GitSweep: Refresh"
+        "title": "GitSweep: Refresh",
+        "icon": {
+          "dark": "images/dark/refresh.svg",
+          "light": "images/light/refresh.svg"
+        }
       }
     ],
     "menus": {
