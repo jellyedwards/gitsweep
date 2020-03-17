@@ -7,7 +7,7 @@
     "color": "#C80000",
     "theme": "dark"
   },
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "jellyedwards",
   "license": "MIT",
   "repository": {
@@ -95,7 +95,7 @@
     "@types/glob": "^7.1.1",
     "@types/mocha": "^5.2.6",
     "@types/node": "^10.17.17",
-    "@types/vscode": "^1.43.0",
+    "@types/vscode": "^1.38.0",
     "glob": "^7.1.6",
     "mocha": "^6.2.2",
     "tslint": "^5.20.1",
