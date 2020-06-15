@@ -120,7 +120,8 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 
 	private shortenPath(path: string, removeLeadingSlash: boolean=false) {
 		const toRemove = this.forwardSlashes(this.gitRoot) + (removeLeadingSlash ? '/' : '');
-		return (this.forwardSlashes(path).replace(toRemove, ''));
+		const regEx = new RegExp(toRemove, "ig");
+		return (this.forwardSlashes(path).replace(regEx, ''));
 	}
 
 	private includeFile = (filename: string) => {

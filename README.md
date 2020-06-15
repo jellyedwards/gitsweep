@@ -24,6 +24,11 @@ This extension contributes the following settings:
 
 ## Release Notes
 
+### 0.0.4
+
+Fix: need to do a case insensitive replace when shortening paths otherwise the
+path in the exclude file won't be relative (and exclude won't work)
+
 ### 0.0.2 & 0.0.3
 
 Updated minimist package.
