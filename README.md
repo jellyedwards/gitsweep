@@ -20,9 +20,11 @@ This extension contributes the following settings:
 -->
 ## Known Issues/TODOs
 
-* Selecting multiple files and clicking the sweep icon only commits one file
-
 ## Release Notes
+
+### 0.0.5
+
+Feature: added multiselect support
 
 ### 0.0.4
 

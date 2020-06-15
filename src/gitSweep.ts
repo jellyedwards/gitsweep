@@ -158,7 +158,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 
 }
 
-class AssumedUnchangedFile extends vscode.TreeItem {
+export class AssumedUnchangedFile extends vscode.TreeItem {
 	constructor(
 		public readonly type: string,
 		public readonly filename: string,
