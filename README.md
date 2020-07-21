@@ -22,6 +22,10 @@ This extension contributes the following settings:
 
 ## Release Notes
 
+### 0.0.6
+
+Bump lodash from 4.17.15 to 4.17.19
+
 ### 0.0.5
 
 Feature: added multiselect support
