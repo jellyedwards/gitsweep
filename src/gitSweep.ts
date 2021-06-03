@@ -166,22 +166,15 @@ export class AssumedUnchangedFile extends vscode.TreeItem {
 	) {
 		super(vscode.Uri.file(path.join(gitRoot, filename)),
 			vscode.TreeItemCollapsibleState.None);
+		this.tooltip = `${path.join(gitRoot, filename)} (${this.type})`;
+		this.description = `(${this.type})`;
+		this.command = {
+			 command: 'gitSweep.openFile', title: "Open File", arguments: [this.resourceUri] 
+		};
 	}
 
 	get path(): string {
 		return path.join(this.gitRoot, this.filename);
-	}
-
-	get tooltip(): string {
-		return `${this.filename}·${this.type}`;
-	}
-
-	get description(): string {
-		return this.filename;
-	}
-
-	get command(): vscode.Command {
-		return { command: 'gitSweep.openFile', title: "Open File", arguments: [this.resourceUri] };
 	}
 
 	contextValue = 'file';

@@ -20,28 +20,5 @@ This extension contributes the following settings:
 -->
 ## Known Issues/TODOs
 
-## Release Notes
-
-### 0.0.6
-
-Bump lodash from 4.17.15 to 4.17.19
-
-### 0.0.5
-
-Feature: added multiselect support
-
-### 0.0.4
-
-Fix: need to do a case insensitive replace when shortening paths otherwise the
-path in the exclude file won't be relative (and exclude won't work)
-
-### 0.0.2 & 0.0.3
-
-Updated minimist package.
-
-### 0.0.1
-
-Initial release of GitSweep.
-
 ## Thanks to...
 [Icons8](https://icons8.com) and [vscode-icons](https://github.com/microsoft/vscode-icons) for icons
