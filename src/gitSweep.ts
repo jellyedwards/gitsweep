@@ -18,6 +18,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 
   private pathToExclude: string;
   private gitRoot: string;
+  private debug: vscode.OutputChannel;
 
   constructor() {
     const cwd = vscode.workspace.workspaceFolders
@@ -29,6 +30,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
       // spawnSync wraps the output in commas and a newline for some reason
       .replace(/^,|,$|\n/g, "");
     this.pathToExclude = path.join(this.gitRoot, ".git", "info", "exclude");
+    this.debug = vscode.window.createOutputChannel("GitSweep");
 
     vscode.commands.registerCommand("gitSweep.openFile", (file) => {
       vscode.workspace.openTextDocument(file).then((doc) => {
@@ -83,8 +85,9 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
       .split(/\n/)
       .filter((a) => /^[a-zS]/.test(a)) // must start with a lowercase letter or capital S
       .map((line) => {
-        const parts = line.split(" ");
-        const [typeLetter, path] = parts;
+        const typeLetter = line.substring(0, line.indexOf(" "));
+        const path = line.substring(line.indexOf(" ") + 1);
+
         let type = IgnoreEnum.SkipWorktree;
         // if it's a lowercase letter it's been --assume-unchanged
         if (typeLetter === typeLetter.toLowerCase()) {
@@ -117,7 +120,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 
   private fileInRepo = (filename: string) => {
     try {
-      cp.execSync(`git ls-files --error-unmatch ${filename}`, {
+      cp.execSync(`git ls-files --error-unmatch "${filename}"`, {
         cwd: this.gitRoot,
       });
       return true;
@@ -137,6 +140,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
         : "\n";
 
       fs.appendFileSync(this.pathToExclude, prefix + filename + "\n");
+      this.debug.appendLine(`excluding "${filename}"`);
     } catch (err) {
       if (err instanceof Error) {
         vscode.window.showErrorMessage("Couldn't exclude file", err.message);
@@ -171,6 +175,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
       const newExclude = fileContents.replace(regex, "");
 
       fs.writeFileSync(this.pathToExclude, newExclude);
+      this.debug.appendLine(`including "${filename}"`);
     } catch (err) {
       if (err instanceof Error) {
         vscode.window.showErrorMessage("Couldn't include file", err.message);
@@ -181,10 +186,12 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   // generic updateIndex for assume, no-assume, skip and no-skip (below)
   private updateIndex = (filename: String, arg: string, msg: string) => {
     try {
-      cp.execSync(`git update-index ${arg} ${filename}`, {
+      const cmd = `git update-index ${arg} "${filename}"`;
+      this.debug.appendLine(`${msg}: ${cmd}`);
+
+      cp.execSync(cmd, {
         cwd: this.gitRoot,
       });
-      vscode.window.showInformationMessage(`${msg} ${filename}`);
     } catch (err) {
       if (err instanceof Error) {
         vscode.window.showErrorMessage(err.message);
