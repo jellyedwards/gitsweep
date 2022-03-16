@@ -32,6 +32,11 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
     this.pathToExclude = path.join(this.gitRoot, ".git", "info", "exclude");
     this.debug = vscode.window.createOutputChannel("GitSweep");
 
+    // watch the exclude file and update when it changes
+    fs.watchFile(this.pathToExclude, () => {
+      this.refresh();
+    });
+
     vscode.commands.registerCommand("gitSweep.openFile", (file) => {
       vscode.workspace.openTextDocument(file).then((doc) => {
         vscode.window.showTextDocument(doc);
@@ -67,6 +72,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
+    this.getChildren();
   }
 
   getTreeItem(element: AssumedUnchangedFile): vscode.TreeItem {
@@ -97,6 +103,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
         return {
           type,
           path,
+          isPattern: false
         };
       });
 
@@ -105,15 +112,19 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
       .readFileSync(this.pathToExclude)
       .toString()
       .split(/\n/)
-      .filter((e) => /^(?!\s*#).+/.test(e))
-      .map((line) => ({ type: IgnoreEnum.Excluded, path: line }));
+      .filter((e) => /^(?!\s*#).+/.test(e)) // ignore comments
+      .map((line) => ({ 
+        type: IgnoreEnum.Excluded, 
+        path: line, 
+        isPattern: /((?<!\\)(\*|\?|\[|\])|^\\!)/.test(line) // does it have unescaped wildcards?
+      }));
 
     // return a list of both skipped and excluded files
     return Promise.resolve(
       assumedUnchangedFiles
         .concat(excludedFiles)
         .map(
-          (file) => new AssumedUnchangedFile(file.type, file.path, this.gitRoot)
+          (file) => new AssumedUnchangedFile(file.type, file.path, this.gitRoot, file.isPattern)
         )
     );
   }
@@ -212,7 +223,8 @@ export class AssumedUnchangedFile extends vscode.TreeItem {
   constructor(
     public readonly type: string,
     public readonly filename: string,
-    public readonly gitRoot: string
+    public readonly gitRoot: string,
+    public readonly isPattern: boolean
   ) {
     super(
       vscode.Uri.file(path.join(gitRoot, filename)),
@@ -225,6 +237,11 @@ export class AssumedUnchangedFile extends vscode.TreeItem {
       title: "Open File",
       arguments: [this.resourceUri],
     };
+
+    if (isPattern) {
+      this.label = filename;
+      this.description = `(${this.type} pattern)`;
+    }
   }
 
   get path(): string {
