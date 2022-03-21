@@ -69,7 +69,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   }
 
   refresh(): void {
-    this._onDidChangeTreeData.fire();
+    this._onDidChangeTreeData.fire(undefined);
     this.getChildren();
     vscode.commands.executeCommand("git.refresh");
   }
