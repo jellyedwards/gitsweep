@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.0.9
+
+### Fix
+
+Handle exclude file patterns
+Upgrade vsce and mocha due to vulnerabilities
+
 ## 0.0.8
 
 ### Fix
