@@ -52,7 +52,6 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
     }
 
     this.refresh();
-    vscode.commands.executeCommand("git.refresh");
   }
 
   unsweepFile(path: string, type: string) {
@@ -67,12 +66,12 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
     }
 
     this.refresh();
-    vscode.commands.executeCommand("git.refresh");
   }
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
     this.getChildren();
+    vscode.commands.executeCommand("git.refresh");
   }
 
   getTreeItem(element: AssumedUnchangedFile): vscode.TreeItem {
