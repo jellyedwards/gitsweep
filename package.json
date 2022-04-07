@@ -7,7 +7,7 @@
     "color": "#C80000",
     "theme": "dark"
   },
-  "version": "0.0.9",
+  "version": "0.0.10",
   "publisher": "jellyedwards",
   "license": "MIT",
   "repository": {
@@ -22,7 +22,7 @@
   ],
   "activationEvents": [
     "workspaceContains:.git",
-    "onView:gitSweep"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -58,6 +58,20 @@
           "dark": "images/dark/refresh.svg",
           "light": "images/light/refresh.svg"
         }
+      },
+      {
+        "command": "gitSweep.sweepFolder",
+        "title": "Exclude folder"
+      },
+      {
+        "command": "gitSweep.unsweepFolder",
+        "title": "Restore folder"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "gitSweep.menu",
+        "label": "GitSweep"
       }
     ],
     "menus": {
@@ -79,6 +93,25 @@
           "command": "gitSweep.refresh",
           "when": "view == gitSweep",
           "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "submenu": "gitSweep.menu",
+          "group": "inline",
+          "when": "explorerResourceIsFolder"
+        }
+      ],
+      "gitSweep.menu": [
+        {
+          "command": "gitSweep.sweepFolder",
+          "when": "explorerResourceIsFolder",
+          "group": "inline"
+        },
+        {
+          "command": "gitSweep.unsweepFolder",
+          "when": "explorerResourceIsFolder",
+          "group": "inline"
         }
       ]
     }

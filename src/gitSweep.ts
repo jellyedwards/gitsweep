@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import * as cp from "child_process";
+import { openStdin } from "process";
 
 const IgnoreEnum = Object.freeze({
   AssumeUnchanged: "Assume Unchanged",
@@ -44,25 +45,38 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
     });
   }
 
-  sweepFile(path: string) {
-    if (this.fileInRepo(path)) {
-      this.skip(path);
+  sweepFile(filePath: string) {
+    if (this.fileInRepo(filePath)) {
+      this.skip(filePath);
     } else {
-      this.excludeFile(path);
+      if (fs.existsSync(filePath)) {
+        const result = fs.lstatSync(filePath);
+        if (result.isDirectory()) {
+          this.excludeFile(filePath + path.sep + "*");
+        } else if (result.isFile()) {
+          this.excludeFile(filePath);
+        }
+      }
     }
 
     this.refresh();
   }
 
-  unsweepFile(path: string, type: string) {
-    if (type !== IgnoreEnum.Excluded) {
-      if (type === IgnoreEnum.AssumeUnchanged) {
-        this.dontAssume(path);
-      } else {
-        this.dontSkip(path);
-      }
+  unsweepFile(filePath: string) {
+    if (this.fileInRepo(filePath)) {
+      this.dontAssume(filePath);
+      this.dontSkip(filePath);
     } else {
-      this.includeFile(path);
+      if (fs.existsSync(filePath)) {
+        const result = fs.lstatSync(filePath);
+        if (result.isDirectory()) {
+          this.includeFile(filePath + path.sep + "*");
+        } else if (result.isFile()) {
+          this.includeFile(filePath);
+        }
+      } else {
+        this.includeFile(filePath);
+      }
     }
 
     this.refresh();
@@ -102,7 +116,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
         return {
           type,
           path,
-          isPattern: false
+          isPattern: false,
         };
       });
 
@@ -112,19 +126,24 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
       .toString()
       .split(/\n/)
       .filter((e) => /^(?!\s*#).+/.test(e)) // ignore comments
-      .map((line) => ({ 
-        type: IgnoreEnum.Excluded, 
-        path: line, 
-        isPattern: /((?<!\\)(\*|\?|\[|\])|^\\!)/.test(line) // does it have unescaped wildcards?
+      .map((line) => ({
+        type: IgnoreEnum.Excluded,
+        path: line,
+        isPattern: /((?<!\\)(\*|\?|\[|\])|^\\!)/.test(line), // does it have unescaped wildcards?
       }));
 
     // return a list of both skipped and excluded files
+    const all = assumedUnchangedFiles.concat(excludedFiles);
     return Promise.resolve(
-      assumedUnchangedFiles
-        .concat(excludedFiles)
-        .map(
-          (file) => new AssumedUnchangedFile(file.type, file.path, this.gitRoot, file.isPattern)
-        )
+      all.map(
+        (file) =>
+          new AssumedUnchangedFile(
+            file.type,
+            file.path,
+            this.gitRoot,
+            file.isPattern
+          )
+      )
     );
   }
 
@@ -142,14 +161,17 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   private excludeFile = (filename: string) => {
     try {
       filename = this.shortenPath(filename);
-      const prefix = fs
-        .readFileSync(this.pathToExclude)
-        .toString()
-        .endsWith("\n")
-        ? ""
-        : "\n";
+      const entry = filename + "\n";
+      const excludeFile = fs.readFileSync(this.pathToExclude).toString();
 
-      fs.appendFileSync(this.pathToExclude, prefix + filename + "\n");
+      if (excludeFile.includes(entry)) {
+        return;
+      }
+
+      // if there's no newline at the end of the file, add one
+      const prefix = excludeFile.endsWith("\n") ? "" : "\n";
+
+      fs.appendFileSync(this.pathToExclude, prefix + entry);
       this.debug.appendLine(`excluding "${filename}"`);
     } catch (err) {
       if (err instanceof Error) {
@@ -212,10 +234,10 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   private skip = (f: String) =>
     this.updateIndex(f, "--skip-worktree", "Skip Worktree");
   private dontSkip = (f: String) =>
-    this.updateIndex(f, "--no-skip-worktree", "No Skip Worktree");
+    this.updateIndex(f, "--no-skip-worktree", "Don't Skip Worktree");
   // private assume = (f: String) => updateIndex(f, '--assume-unchanged', 'Assume Unchanged');
   private dontAssume = (f: String) =>
-    this.updateIndex(f, "--no-assume-unchanged", "No Assume Unchanged");
+    this.updateIndex(f, "--no-assume-unchanged", "Don't Assume Unchanged");
 }
 
 export class AssumedUnchangedFile extends vscode.TreeItem {
