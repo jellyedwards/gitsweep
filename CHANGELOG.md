@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.10
+
+Allow excluding/including folders with a right click on the explorer menu
+
 ## 0.0.9
 
 ### Fix
