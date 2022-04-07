@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.0.11
+
+Allow excluding/including files with a right click on the explorer menu
+Allow assume unchanged
+
 ## 0.0.10
 
 Allow excluding/including folders with a right click on the explorer menu

@@ -7,7 +7,7 @@
     "color": "#C80000",
     "theme": "dark"
   },
-  "version": "0.0.10",
+  "version": "0.0.11",
   "publisher": "jellyedwards",
   "license": "MIT",
   "repository": {
@@ -65,7 +65,23 @@
       },
       {
         "command": "gitSweep.unsweepFolder",
-        "title": "Restore folder"
+        "title": "Include folder"
+      },
+      {
+        "command": "gitSweep.sweepFileSkip",
+        "title": "Sweep file with --skip-worktree"
+      },
+      {
+        "command": "gitSweep.sweepFileAssume",
+        "title": "Sweep file with --assume-unchanged"
+      },
+      {
+        "command": "gitSweep.sweepFileExclude",
+        "title": "Sweep file by adding to the exclude file"
+      },
+      {
+        "command": "gitSweep.unsweepFile",
+        "title": "Include file"
       }
     ],
     "submenus": [
@@ -99,19 +115,33 @@
         {
           "submenu": "gitSweep.menu",
           "group": "inline",
-          "when": "explorerResourceIsFolder"
+          "when": "explorerResourceIsFolder || resourceScheme == file"
         }
       ],
       "gitSweep.menu": [
         {
           "command": "gitSweep.sweepFolder",
-          "when": "explorerResourceIsFolder",
-          "group": "inline"
+          "when": "explorerResourceIsFolder"
         },
         {
           "command": "gitSweep.unsweepFolder",
-          "when": "explorerResourceIsFolder",
-          "group": "inline"
+          "when": "explorerResourceIsFolder"
+        },
+        {
+          "command": "gitSweep.sweepFileSkip",
+          "when": "!explorerResourceIsFolder"
+        },
+        {
+          "command": "gitSweep.sweepFileAssume",
+          "when": "!explorerResourceIsFolder"
+        },
+        {
+          "command": "gitSweep.sweepFileExclude",
+          "when": "!explorerResourceIsFolder"
+        },
+        {
+          "command": "gitSweep.unsweepFile",
+          "when": "!explorerResourceIsFolder"
         }
       ]
     }

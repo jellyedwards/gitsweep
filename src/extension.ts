@@ -10,26 +10,37 @@ export function activate(context: vscode.ExtensionContext) {
     canSelectMany: true,
   });
 
-  // called whenever a file is to be ignored
-  const sweep = (...args: any[]) => {
-    args.map(item => item?.fsPath ?? item?.resourceUri?.fsPath)
-      .filter(Boolean)
-      .forEach((filePath) => gitSweep.sweepFile(filePath));
-  };
-  context.subscriptions.push(vscode.commands.registerCommand("gitSweep.sweep", sweep));
-  context.subscriptions.push(vscode.commands.registerCommand("gitSweep.sweepFolder", sweep));
+  // for brevity
+  const register = (command: string, handler: any) =>
+    context.subscriptions.push(
+      vscode.commands.registerCommand(command, handler)
+    );
 
-  // called whenever a file is to be brought back into git
+  // called whenever a file/folder is to be ignored
+  const sweep =
+    (type: string) =>
+    (...args: any[]) => {
+      args
+        .map((item) => item?.fsPath ?? item?.resourceUri?.fsPath)
+        .filter(Boolean)
+        .forEach((filePath) => gitSweep.sweepFile(filePath, type));
+    };
+  register("gitSweep.sweep", sweep("skip"));
+  register("gitSweep.sweepFolder", sweep("exclude"));
+  register("gitSweep.sweepFileSkip", sweep("skip"));
+  register("gitSweep.sweepFileAssume", sweep("assume"));
+  register("gitSweep.sweepFileExclude", sweep("exclude"));
+
+  // called whenever a file/folder is to be brought back into git
   const unsweep = (item: any, multipleItems: [any]) => {
     (multipleItems || [item])
-      .map(item => item.fsPath ?? item.path)
+      .map((item) => item.fsPath ?? item.path)
       .filter(Boolean)
-      .forEach((filePath) =>
-        gitSweep.unsweepFile(filePath)
-      );
+      .forEach((filePath) => gitSweep.unsweepFile(filePath));
   };
-  context.subscriptions.push(vscode.commands.registerCommand("gitSweep.unsweep", unsweep));
-  context.subscriptions.push(vscode.commands.registerCommand("gitSweep.unsweepFolder", unsweep));
+  register("gitSweep.unsweep", unsweep);
+  register("gitSweep.unsweepFolder", unsweep);
+  register("gitSweep.unsweepFile", unsweep);
 
   // use could change exclude file manually, this allows refresh of the under the rug
   context.subscriptions.push(

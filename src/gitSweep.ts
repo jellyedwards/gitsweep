@@ -45,9 +45,13 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
     });
   }
 
-  sweepFile(filePath: string) {
-    if (this.fileInRepo(filePath)) {
-      this.skip(filePath);
+  sweepFile(filePath: string, type: string = "skip") {
+    if (this.fileInRepo(filePath) && type !== "exclude") {
+      if (type === "assume") {
+        this.assume(filePath);
+      } else {
+        this.skip(filePath);
+      }
     } else {
       if (fs.existsSync(filePath)) {
         const result = fs.lstatSync(filePath);
@@ -235,7 +239,8 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
     this.updateIndex(f, "--skip-worktree", "Skip Worktree");
   private dontSkip = (f: String) =>
     this.updateIndex(f, "--no-skip-worktree", "Don't Skip Worktree");
-  // private assume = (f: String) => updateIndex(f, '--assume-unchanged', 'Assume Unchanged');
+  private assume = (f: String) =>
+    this.updateIndex(f, "--assume-unchanged", "Assume Unchanged");
   private dontAssume = (f: String) =>
     this.updateIndex(f, "--no-assume-unchanged", "Don't Assume Unchanged");
 }
