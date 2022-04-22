@@ -23,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
       args
         .map((item) => item?.fsPath ?? item?.resourceUri?.fsPath)
         .filter(Boolean)
-        .forEach((filePath) => gitSweep.sweepFile(filePath, type));
+        .forEach((filePath) => gitSweep.sweep(filePath, type));
     };
   register("gitSweep.sweep", sweep("skip"));
   register("gitSweep.sweepFolder", sweep("exclude"));
@@ -36,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
     (multipleItems || [item])
       .map((item) => item.fsPath ?? item.path)
       .filter(Boolean)
-      .forEach((filePath) => gitSweep.unsweepFile(filePath));
+      .forEach((filePath) => gitSweep.unsweep(filePath));
   };
   register("gitSweep.unsweep", unsweep);
   register("gitSweep.unsweepFolder", unsweep);
