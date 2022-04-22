@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.0.13
+
+Upgrade vscode dependency for prerelease
 ## 0.0.12
 
 ### Fix
