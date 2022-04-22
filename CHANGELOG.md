@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.0.12
+
+### Fix
+
+Absolute/relative path fixes
+
 ## 0.0.11
 
 Allow excluding/including files with a right click on the explorer menu

@@ -17,24 +17,27 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   readonly onDidChangeTreeData: vscode.Event<AssumedUnchangedFile | undefined> =
     this._onDidChangeTreeData.event;
 
-  private pathToExclude: string;
+  private pathToExcludeFile: string;
   private gitRoot: string;
   private debug: vscode.OutputChannel;
 
   constructor() {
+    this.debug = vscode.window.createOutputChannel("GitSweep");
+
     const cwd = vscode.workspace.workspaceFolders
       ? vscode.workspace.workspaceFolders[0].uri.fsPath
       : "./";
+
+    // we use gitRoot to make sure paths are relative when needed
     this.gitRoot = cp
       .spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd })
       .output.toString()
       // spawnSync wraps the output in commas and a newline for some reason
       .replace(/^,|,$|\n/g, "");
-    this.pathToExclude = path.join(this.gitRoot, ".git", "info", "exclude");
-    this.debug = vscode.window.createOutputChannel("GitSweep");
+    this.pathToExcludeFile = path.join(this.gitRoot, ".git", "info", "exclude");
 
     // watch the exclude file and update when it changes
-    fs.watchFile(this.pathToExclude, () => {
+    fs.watchFile(this.pathToExcludeFile, () => {
       this.refresh();
     });
 
@@ -45,41 +48,52 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
     });
   }
 
-  sweepFile(filePath: string, type: string = "skip") {
-    if (this.fileInRepo(filePath) && type !== "exclude") {
-      if (type === "assume") {
-        this.assume(filePath);
-      } else {
-        this.skip(filePath);
-      }
+  sweep(target: string, type: string = "skip") {
+    // if the path doesn't exist it's just a pattern
+    if (!fs.existsSync(target)) {
+      this.addToExcludeFile(target);
     } else {
-      if (fs.existsSync(filePath)) {
-        const result = fs.lstatSync(filePath);
-        if (result.isDirectory()) {
-          this.excludeFile(filePath + path.sep + "*");
-        } else if (result.isFile()) {
-          this.excludeFile(filePath);
+      // otherwise check if it's a dir or file
+      const result = fs.lstatSync(target);
+      if (result.isDirectory()) {
+        // directories are appended with with /*
+        this.addToExcludeFile(target + path.sep + "*");
+      } else if (result.isFile() && this.fileInRepo(target)) {
+        // if the file is in our repo execute the update-index
+        if (type === "assume") {
+          this.assume(target);
+        } else if (type === "skip") {
+          this.skip(target);
+        } else {
+          this.addToExcludeFile(target);
         }
+      } else {
+        // otherwise it's probably a pattern
+        this.addToExcludeFile(target);
       }
     }
 
     this.refresh();
   }
 
-  unsweepFile(filePath: string) {
-    if (this.fileInRepo(filePath)) {
-      this.dontAssume(filePath);
-      this.dontSkip(filePath);
+  unsweep(target: string) {
+    // if the path doesn't exist it's just a pattern
+    if (!fs.existsSync(target)) {
+      this.removeFromExcludeFile(target);
     } else {
-      if (fs.existsSync(filePath)) {
-        const result = fs.lstatSync(filePath);
-        if (result.isDirectory()) {
-          this.includeFile(filePath + path.sep + "*");
-        } else if (result.isFile()) {
-          this.includeFile(filePath);
-        }
+      // otherwise check if it's a dir or file
+      const result = fs.lstatSync(target);
+      if (result.isDirectory()) {
+        // directories are appended with with /*
+        this.removeFromExcludeFile(target + path.sep + "*");
+      } else if (result.isFile() && this.fileInRepo(target)) {
+        // all methods done here to make sure it's included again
+        this.dontAssume(target);
+        this.dontSkip(target);
+        this.removeFromExcludeFile(target);
       } else {
-        this.includeFile(filePath);
+        // otherwise it's probably a pattern
+        this.removeFromExcludeFile(target);
       }
     }
 
@@ -94,6 +108,11 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 
   getTreeItem(element: AssumedUnchangedFile): vscode.TreeItem {
     return element;
+  }
+
+  hasWildcards(s: string) {
+    // does it have unescaped wildcards?
+    return /((?<!\\)(\*|\?|\[|\])|^\\!)/.test(s);
   }
 
   getChildren(): Thenable<AssumedUnchangedFile[]> {
@@ -124,20 +143,20 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
         };
       });
 
-    // get the files that are in the exclude file
-    const excludedFiles = fs
-      .readFileSync(this.pathToExclude)
+    // get the files/patterns in the .git/info/exclude file
+    const excludedLines = fs
+      .readFileSync(this.pathToExcludeFile)
       .toString()
       .split(/\n/)
       .filter((e) => /^(?!\s*#).+/.test(e)) // ignore comments
       .map((line) => ({
         type: IgnoreEnum.Excluded,
         path: line,
-        isPattern: /((?<!\\)(\*|\?|\[|\])|^\\!)/.test(line), // does it have unescaped wildcards?
+        isPattern: this.hasWildcards(line),
       }));
 
     // return a list of both skipped and excluded files
-    const all = assumedUnchangedFiles.concat(excludedFiles);
+    const all = assumedUnchangedFiles.concat(excludedLines);
     return Promise.resolve(
       all.map(
         (file) =>
@@ -162,20 +181,29 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
     }
   };
 
-  private excludeFile = (filename: string) => {
+  private getExcludeFileRegex(s: string) {
+    // match the previous new line if there was one:	\v{0,1}
+    // then it might start with a ./ or a / or neither: ^(\.\/|\/){0,1}
+    // then it should match the filename (\Q and \E are for regexp literal)
+    const pattern = `(\n{0,1}\v{0,1}^(\.\/|\/){0,1}${this.escapeRegex(s)})`;
+    return new RegExp(pattern, "ms");
+  }
+
+  private addToExcludeFile = (filename: string) => {
     try {
       filename = this.shortenPath(filename);
       const entry = filename + "\n";
-      const excludeFile = fs.readFileSync(this.pathToExclude).toString();
+      const excludeFile = fs.readFileSync(this.pathToExcludeFile).toString();
 
-      if (excludeFile.includes(entry)) {
+      // ignore if it's there already
+      if (excludeFile.match(this.getExcludeFileRegex(filename))) {
         return;
       }
 
       // if there's no newline at the end of the file, add one
       const prefix = excludeFile.endsWith("\n") ? "" : "\n";
 
-      fs.appendFileSync(this.pathToExclude, prefix + entry);
+      fs.appendFileSync(this.pathToExcludeFile, prefix + entry);
       this.debug.appendLine(`excluding "${filename}"`);
     } catch (err) {
       if (err instanceof Error) {
@@ -184,34 +212,27 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
     }
   };
 
-  private forwardSlashes(s: string) {
-    return s.replace(/\\/g, "/");
-  }
-
-  private shortenPath(path: string, removeLeadingSlash: boolean = false) {
-    const toRemove =
-      this.forwardSlashes(this.gitRoot) + (removeLeadingSlash ? "/" : "");
-    const regEx = new RegExp(toRemove, "ig");
-    return this.forwardSlashes(path).replace(regEx, "");
+  private shortenPath(s: string) {
+    const relative = path.relative(this.gitRoot, s);
+    const posixPath = relative.split(path.sep).join(path.posix.sep);
+    return posixPath;
   }
 
   private escapeRegex(string: string) {
     return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
   }
 
-  private includeFile = (filename: string) => {
+  private removeFromExcludeFile = (target: string) => {
     try {
-      filename = this.shortenPath(filename, true);
-      const fileContents = fs.readFileSync(this.pathToExclude).toString();
-      // match the previous new line if there was one:	\v{0,1}
-      // then it might start with a ./ or a / or neither: ^(\.\/|\/){0,1}
-      // then it should match the filename (\Q and \E are for regexp literal)
-      const pattern = `(\v{0,1}^(\.\/|\/){0,1}${this.escapeRegex(filename)})`;
-      const regex = new RegExp(pattern, "ms");
-      const newExclude = fileContents.replace(regex, "");
+      target = this.shortenPath(target);
+      const fileContents = fs.readFileSync(this.pathToExcludeFile).toString();
+      const newExclude = fileContents.replace(
+        this.getExcludeFileRegex(target),
+        ""
+      );
 
-      fs.writeFileSync(this.pathToExclude, newExclude);
-      this.debug.appendLine(`including "${filename}"`);
+      fs.writeFileSync(this.pathToExcludeFile, newExclude);
+      this.debug.appendLine(`including "${target}"`);
     } catch (err) {
       if (err instanceof Error) {
         vscode.window.showErrorMessage("Couldn't include file", err.message);
@@ -219,7 +240,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
     }
   };
 
-  // generic updateIndex for assume, no-assume, skip and no-skip (below)
+  // generic updateIndex for assume, no-assume, skip and no-skip (see below)
   private updateIndex = (filename: String, arg: string, msg: string) => {
     try {
       const cmd = `git update-index ${arg} "${filename}"`;
