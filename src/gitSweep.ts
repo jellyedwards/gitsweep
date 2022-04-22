@@ -67,7 +67,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   }
 
   unsweepFile(filePath: string) {
-    if (this.fileInRepo(filePath)) {
+    if (!this.hasWildcards(filePath) && this.fileInRepo(filePath)) {
       this.dontAssume(filePath);
       this.dontSkip(filePath);
     } else {
@@ -94,6 +94,11 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 
   getTreeItem(element: AssumedUnchangedFile): vscode.TreeItem {
     return element;
+  }
+
+  hasWildcards(s: string) {
+    // does it have unescaped wildcards?
+    return /((?<!\\)(\*|\?|\[|\])|^\\!)/.test(s);
   }
 
   getChildren(): Thenable<AssumedUnchangedFile[]> {
@@ -133,7 +138,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
       .map((line) => ({
         type: IgnoreEnum.Excluded,
         path: line,
-        isPattern: /((?<!\\)(\*|\?|\[|\])|^\\!)/.test(line), // does it have unescaped wildcards?
+        isPattern: this.hasWildcards(line)
       }));
 
     // return a list of both skipped and excluded files
@@ -184,15 +189,8 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
     }
   };
 
-  private forwardSlashes(s: string) {
-    return s.replace(/\\/g, "/");
-  }
-
-  private shortenPath(path: string, removeLeadingSlash: boolean = false) {
-    const toRemove =
-      this.forwardSlashes(this.gitRoot) + (removeLeadingSlash ? "/" : "");
-    const regEx = new RegExp(toRemove, "ig");
-    return this.forwardSlashes(path).replace(regEx, "");
+  private shortenPath(s: string) {
+    return path.relative(this.gitRoot, s);
   }
 
   private escapeRegex(string: string) {
@@ -201,7 +199,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
 
   private includeFile = (filename: string) => {
     try {
-      filename = this.shortenPath(filename, true);
+      filename = this.shortenPath(filename);
       const fileContents = fs.readFileSync(this.pathToExclude).toString();
       // match the previous new line if there was one:	\v{0,1}
       // then it might start with a ./ or a / or neither: ^(\.\/|\/){0,1}
