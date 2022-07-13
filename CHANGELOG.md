@@ -1,6 +1,6 @@
 # Change Log
 
-## 0.0.14
+## 0.0.15
 
 Added tree/list view toggle
 
