@@ -373,7 +373,8 @@ export class AssumedUnchangedFile extends vscode.TreeItem {
         this.description = `(${this.type} pattern)`;
       }
     } else {
-      //this.label = filename;
+      this.resourceUri = undefined; // so I don't get "contains emphasized items"
+      this.label = filename.split(path.posix.sep).slice(-1)[0];
     }
   }
 
