@@ -38,6 +38,8 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
       .replace(/^,|,$|\n/g, "");
     this.pathToExcludeFile = path.join(this.gitRoot, ".git", "info", "exclude");
 
+    this.debug.appendLine(`Git root: ${this.gitRoot}`);
+
     // watch the exclude file and update when it changes
     fs.watchFile(this.pathToExcludeFile, () => {
       this.refresh();
@@ -51,6 +53,8 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   }
 
   sweep(target: string, type: string = "skip") {
+    this.debug.appendLine(`Sweeping ${target} as ${type}`);
+
     // if the path doesn't exist it's just a pattern
     if (!fs.existsSync(target)) {
       this.addToExcludeFile(target);
@@ -79,6 +83,8 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   }
 
   unsweep(target: string) {
+    this.debug.appendLine(`Unsweeping ${target}`);
+
     // if the path doesn't exist it's just a pattern
     if (!fs.existsSync(target)) {
       this.removeFromExcludeFile(target);
