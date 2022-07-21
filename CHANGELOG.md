@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.15
+
+Added tree/list view toggle
+
 ## 0.0.13
 
 Upgrade vscode dependency for prerelease

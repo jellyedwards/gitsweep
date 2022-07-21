@@ -42,12 +42,10 @@ export function activate(context: vscode.ExtensionContext) {
   register("gitSweep.unsweepFolder", unsweep);
   register("gitSweep.unsweepFile", unsweep);
 
-  // use could change exclude file manually, this allows refresh of the under the rug
-  context.subscriptions.push(
-    vscode.commands.registerCommand("gitSweep.refresh", () => {
-      gitSweep.refresh();
-    })
-  );
+  register("gitSweep.refresh", () => gitSweep.refresh());
+
+  register("gitSweep.viewAsTree", () => gitSweep.viewAsTree());
+  register("gitSweep.viewAsList", () => gitSweep.viewAsList());
 }
 
 export function deactivate() {}

@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import * as cp from "child_process";
-import { openStdin } from "process";
+// import { openStdin } from "process";
 
 const IgnoreEnum = Object.freeze({
   AssumeUnchanged: "Assume Unchanged",
@@ -20,6 +20,8 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   private pathToExcludeFile: string;
   private gitRoot: string;
   private debug: vscode.OutputChannel;
+  private sweptFiles?: AssumedUnchangedFile[] = undefined;
+  private viewingAsTree: boolean = false;
 
   constructor() {
     this.debug = vscode.window.createOutputChannel("GitSweep");
@@ -36,6 +38,8 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
       .replace(/^,|,$|\n/g, "");
     this.pathToExcludeFile = path.join(this.gitRoot, ".git", "info", "exclude");
 
+    this.debug.appendLine(`Git root: ${this.gitRoot}`);
+
     // watch the exclude file and update when it changes
     fs.watchFile(this.pathToExcludeFile, () => {
       this.refresh();
@@ -49,6 +53,8 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   }
 
   sweep(target: string, type: string = "skip") {
+    this.debug.appendLine(`Sweeping ${target} as ${type}`);
+
     // if the path doesn't exist it's just a pattern
     if (!fs.existsSync(target)) {
       this.addToExcludeFile(target);
@@ -77,6 +83,8 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   }
 
   unsweep(target: string) {
+    this.debug.appendLine(`Unsweeping ${target}`);
+
     // if the path doesn't exist it's just a pattern
     if (!fs.existsSync(target)) {
       this.removeFromExcludeFile(target);
@@ -101,25 +109,11 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   }
 
   refresh(): void {
-    this._onDidChangeTreeData.fire(undefined);
-    this.getChildren();
-    vscode.commands.executeCommand("git.refresh");
-  }
-
-  getTreeItem(element: AssumedUnchangedFile): vscode.TreeItem {
-    return element;
-  }
-
-  hasWildcards(s: string) {
-    // does it have unescaped wildcards?
-    return /((?<!\\)(\*|\?|\[|\])|^\\!)/.test(s);
-  }
-
-  getChildren(): Thenable<AssumedUnchangedFile[]> {
     // get the files that are skipped or assume-unchanged
     const gitls = cp.spawnSync("git", ["ls-files", "-v"], {
       cwd: this.gitRoot,
     });
+
     const assumedUnchangedFiles = gitls.output
       .toString()
       // spawnSync wraps the output in commas for some reason
@@ -155,19 +149,92 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
         isPattern: this.hasWildcards(line),
       }));
 
-    // return a list of both skipped and excluded files
+    // cache a list of both skipped and excluded files
     const all = assumedUnchangedFiles.concat(excludedLines);
-    return Promise.resolve(
-      all.map(
-        (file) =>
-          new AssumedUnchangedFile(
-            file.type,
-            file.path,
-            this.gitRoot,
-            file.isPattern
-          )
-      )
+    this.sweptFiles = all.map(
+      (file) =>
+        new AssumedUnchangedFile(
+          file.type,
+          file.path,
+          this.gitRoot,
+          file.isPattern,
+          false
+        )
     );
+
+    // refresh our window
+    this._onDidChangeTreeData.fire(undefined);
+
+    // tell the normal source control window to refresh so
+    // swept files aren't shown there any more
+    this.refreshGit();
+  }
+
+  refreshGit() {
+    const extension = vscode.extensions.getExtension("vscode.git");
+    if (extension?.isActive) {
+      vscode.commands.executeCommand("git.refresh");
+    }
+  }
+
+  getTreeItem(element: AssumedUnchangedFile): vscode.TreeItem {
+    return element;
+  }
+
+  hasWildcards(s: string) {
+    // does it have unescaped wildcards?
+    return /((?<!\\)(\*|\?|\[|\])|^\\!)/.test(s);
+  }
+
+  getChildren(
+    element?: AssumedUnchangedFile
+  ): Thenable<AssumedUnchangedFile[]> {
+    if (this.sweptFiles === undefined) {
+      this.refresh();
+      return Promise.resolve([]);
+    }
+
+    if (this.viewingAsTree) {
+      let subfolders: { [key: string]: AssumedUnchangedFile } = {};
+      let files: AssumedUnchangedFile[] = [];
+
+      const folderDepth = element?.filename.split(path.posix.sep).length ?? 0;
+
+      // getChildren is recursively called for the tree hierarchy.
+      // if we have an element, it is a folder, only look at items
+      // that are prefixed with the folder path to get child items
+      this.sweptFiles
+        .filter(
+          (f) =>
+            !element ||
+            (element.filename ? f.filename.startsWith(element.filename) : false)
+        )
+        .forEach((f) => {
+          const parts = f.filename.split(path.posix.sep);
+
+          // if this filename is deeper than the parent, create a new subfolder
+          if (!f.isPattern && parts.length > folderDepth + 1) {
+            const subpath = parts
+              .slice(0, folderDepth + 1)
+              .join(path.posix.sep);
+
+            subfolders[subpath] = new AssumedUnchangedFile(
+              "",
+              subpath,
+              this.gitRoot,
+              false,
+              true
+            );
+          } else {
+            files.push(f);
+          }
+        });
+
+      return Promise.resolve(Object.values(subfolders).concat(files));
+    } else {
+      // not a tree so just return a list of the swept files
+      return Promise.resolve(this.sweptFiles);
+    }
   }
 
   private fileInRepo = (filename: string) => {
@@ -264,6 +331,18 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
     this.updateIndex(f, "--assume-unchanged", "Assume Unchanged");
   private dontAssume = (f: String) =>
     this.updateIndex(f, "--no-assume-unchanged", "Don't Assume Unchanged");
+
+  viewAsTree(): void {
+    vscode.commands.executeCommand("setContext", "gitSweep.viewAsTree", true);
+    this.viewingAsTree = true;
+    this.refresh();
+  }
+
+  viewAsList(): void {
+    vscode.commands.executeCommand("setContext", "gitSweep.viewAsTree", false);
+    this.viewingAsTree = false;
+    this.refresh();
+  }
 }
 
 export class AssumedUnchangedFile extends vscode.TreeItem {
@@ -271,23 +350,37 @@ export class AssumedUnchangedFile extends vscode.TreeItem {
     public readonly type: string,
     public readonly filename: string,
     public readonly gitRoot: string,
-    public readonly isPattern: boolean
+    public readonly isPattern: boolean,
+    public readonly isParent: boolean
   ) {
     super(
       vscode.Uri.file(path.join(gitRoot, filename)),
-      vscode.TreeItemCollapsibleState.None
+      isParent
+        ? vscode.TreeItemCollapsibleState.Collapsed
+        : vscode.TreeItemCollapsibleState.None
     );
-    this.tooltip = `${path.join(gitRoot, filename)} (${this.type})`;
-    this.description = `(${this.type})`;
-    this.command = {
-      command: "gitSweep.openFile",
-      title: "Open File",
-      arguments: [this.resourceUri],
-    };
 
-    if (isPattern) {
-      this.label = filename;
-      this.description = `(${this.type} pattern)`;
+    // allows us to hide the unsweep button when it's a folder
+    // "when": "view == gitSweep && viewItem == item"
+    this.contextValue = isParent ? "parent" : "item";
+
+    if (!isParent) {
+      this.tooltip = `${path.join(gitRoot, filename)} (${this.type})`;
+      this.description = `(${this.type})`;
+
+      this.command = {
+        command: "gitSweep.openFile",
+        title: "Open File",
+        arguments: [this.resourceUri],
+      };
+
+      if (isPattern) {
+        this.label = filename;
+        this.description = `(${this.type} pattern)`;
+      }
+    } else {
+      this.resourceUri = undefined; // so I don't get "contains emphasized items"
+      this.label = filename.split(path.posix.sep).slice(-1)[0];
     }
   }
 

@@ -7,7 +7,7 @@
     "color": "#C80000",
     "theme": "dark"
   },
-  "version": "0.0.13",
+  "version": "0.0.15",
   "publisher": "jellyedwards",
   "license": "MIT",
   "repository": {
@@ -60,6 +60,22 @@
         }
       },
       {
+        "command": "gitSweep.viewAsTree",
+        "title": "GitSweep: view as tree",
+        "icon": {
+          "dark": "images/dark/list-tree.svg",
+          "light": "images/light/list-tree.svg"
+        }
+      },
+      {
+        "command": "gitSweep.viewAsList",
+        "title": "GitSweep: view as List",
+        "icon": {
+          "dark": "images/dark/list-flat.svg",
+          "light": "images/light/list-flat.svg"
+        }
+      },
+      {
         "command": "gitSweep.sweepFolder",
         "title": "Exclude folder"
       },
@@ -100,7 +116,7 @@
       "view/item/context": [
         {
           "command": "gitSweep.unsweep",
-          "when": "view == gitSweep",
+          "when": "view == gitSweep && viewItem == item",
           "group": "inline"
         }
       ],
@@ -108,6 +124,16 @@
         {
           "command": "gitSweep.refresh",
           "when": "view == gitSweep",
+          "group": "navigation"
+        },
+        {
+          "command": "gitSweep.viewAsTree",
+          "when": "view == gitSweep && !gitSweep.viewAsTree",
+          "group": "navigation"
+        },
+        {
+          "command": "gitSweep.viewAsList",
+          "when": "view == gitSweep && gitSweep.viewAsTree",
           "group": "navigation"
         }
       ],
