@@ -186,7 +186,7 @@
     "@types/node": "^10.17.18",
     "@types/vscode": "^1.38.0",
     "glob": "^7.1.6",
-    "mocha": "^9.2.2",
+    "mocha": "^11.7.5",
     "tslint": "5.20.1",
     "typescript": "^3.8.3",
     "vsce": "^2.7.0",
