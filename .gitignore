@@ -2,4 +2,4 @@ out
 node_modules
 .vscode-test/
 *.vsix
-!gitsweep-0.0.16-preview.vsix
+!gitsweep-1.0.1-preview.vsix
