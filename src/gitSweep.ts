@@ -31,11 +31,24 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
       : "./";
 
     // we use gitRoot to make sure paths are relative when needed
-    this.gitRoot = cp
-      .spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd })
-      .output.toString()
-      // spawnSync wraps the output in commas and a newline for some reason
-      .replace(/^,|,$|\n/g, "");
+    const revParse = cp.spawnSync(
+      "git",
+      ["rev-parse", "--show-toplevel"],
+      { cwd, encoding: "utf8" }
+    );
+
+    if (revParse.status !== 0 || !revParse.stdout) {
+      // not in a git repo (or git not available) - stay inert instead of
+      // building a bogus path from git's stderr
+      this.gitRoot = "";
+      this.pathToExcludeFile = "";
+      this.debug.appendLine(
+        `Not a git repository: ${(revParse.stderr ?? "").toString().trim()}`
+      );
+      return;
+    }
+
+    this.gitRoot = revParse.stdout.toString().replace(/\r?\n/g, "");
     this.pathToExcludeFile = path.join(this.gitRoot, ".git", "info", "exclude");
 
     this.debug.appendLine(`Git root: ${this.gitRoot}`);
@@ -53,6 +66,9 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   }
 
   sweep(target: string, type: string = "skip") {
+    if (!this.gitRoot) {
+      return;
+    }
     this.debug.appendLine(`Sweeping ${target} as ${type}`);
 
     // if the path doesn't exist it's just a pattern
@@ -83,6 +99,9 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   }
 
   unsweep(target: string) {
+    if (!this.gitRoot) {
+      return;
+    }
     this.debug.appendLine(`Unsweeping ${target}`);
 
     // if the path doesn't exist it's just a pattern
@@ -109,10 +128,20 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   }
 
   refresh(): void {
+    if (!this.gitRoot) {
+      this.sweptFiles = [];
+      this._onDidChangeTreeData.fire(undefined);
+      return;
+    }
     // get the files that are skipped or assume-unchanged
-    const gitls = cp.spawnSync("git", ["ls-files", "-v"], {
-      cwd: this.gitRoot,
-    });
+    // -c core.quotepath=false keeps non-ASCII filenames unquoted (issue #20)
+    const gitls = cp.spawnSync(
+      "git",
+      ["-c", "core.quotepath=false", "ls-files", "-v"],
+      {
+        cwd: this.gitRoot,
+      }
+    );
 
     const assumedUnchangedFiles = gitls.output
       .toString()
@@ -238,14 +267,13 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   }
 
   private fileInRepo = (filename: string) => {
-    try {
-      cp.execSync(`git ls-files --error-unmatch "${filename}"`, {
-        cwd: this.gitRoot,
-      });
-      return true;
-    } catch {
-      return false;
-    }
+    // spawnSync with argv avoids shell interpretation of the filename
+    const result = cp.spawnSync(
+      "git",
+      ["ls-files", "--error-unmatch", "--", filename],
+      { cwd: this.gitRoot }
+    );
+    return result.status === 0;
   };
 
   private getExcludeFileRegex(s: string) {
@@ -308,28 +336,30 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
   };
 
   // generic updateIndex for assume, no-assume, skip and no-skip (see below)
-  private updateIndex = (filename: String, arg: string, msg: string) => {
-    try {
-      const cmd = `git update-index ${arg} "${filename}"`;
-      this.debug.appendLine(`${msg}: ${cmd}`);
+  private updateIndex = (filename: string, arg: string, msg: string) => {
+    this.debug.appendLine(`${msg}: git update-index ${arg} "${filename}"`);
 
-      cp.execSync(cmd, {
-        cwd: this.gitRoot,
-      });
-    } catch (err) {
-      if (err instanceof Error) {
-        vscode.window.showErrorMessage(err.message);
-      }
+    // spawnSync with argv avoids shell interpretation of the filename
+    const result = cp.spawnSync(
+      "git",
+      ["update-index", arg, "--", filename],
+      { cwd: this.gitRoot, encoding: "utf8" }
+    );
+    if (result.status !== 0) {
+      const stderr = (result.stderr ?? "").toString().trim();
+      vscode.window.showErrorMessage(
+        stderr || `git update-index ${arg} failed`
+      );
     }
   };
 
-  private skip = (f: String) =>
+  private skip = (f: string) =>
     this.updateIndex(f, "--skip-worktree", "Skip Worktree");
-  private dontSkip = (f: String) =>
+  private dontSkip = (f: string) =>
     this.updateIndex(f, "--no-skip-worktree", "Don't Skip Worktree");
-  private assume = (f: String) =>
+  private assume = (f: string) =>
     this.updateIndex(f, "--assume-unchanged", "Assume Unchanged");
-  private dontAssume = (f: String) =>
+  private dontAssume = (f: string) =>
     this.updateIndex(f, "--no-assume-unchanged", "Don't Assume Unchanged");
 
   viewAsTree(): void {
