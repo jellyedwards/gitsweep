@@ -7,9 +7,10 @@
     "color": "#C80000",
     "theme": "dark"
   },
-  "version": "0.0.15",
+  "version": "1.0.1",
   "publisher": "jellyedwards",
   "license": "MIT",
+  "preview": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/jellyedwards/gitsweep"

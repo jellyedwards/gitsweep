@@ -1,5 +1,21 @@
 # Change Log
 
+## 1.0.1 (preview)
+
+### Fix
+
+- Handle workspaces that are not git repositories instead of crashing with
+  an `ENOENT` on `.git/info/exclude` (#22)
+- Display filenames with non-ASCII characters correctly in the panel by
+  passing `-c core.quotepath=false` to `git ls-files` (#20)
+
+### Security
+
+- Stop passing filenames through the shell in `git ls-files` /
+  `git update-index` calls, preventing command injection from filenames
+  containing shell metacharacters
+- `npm audit fix` bumps vulnerable transitive dependencies
+
 ## 0.0.15
 
 Added tree/list view toggle
