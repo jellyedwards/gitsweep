@@ -153,7 +153,7 @@ export class GitSweep implements vscode.TreeDataProvider<AssumedUnchangedFile> {
         const typeLetter = line.substring(0, line.indexOf(" "));
         const path = line.substring(line.indexOf(" ") + 1);
 
-        let type = IgnoreEnum.SkipWorktree;
+        let type: string = IgnoreEnum.SkipWorktree;
         // if it's a lowercase letter it's been --assume-unchanged
         if (typeLetter === typeLetter.toLowerCase()) {
           type = IgnoreEnum.AssumeUnchanged;
