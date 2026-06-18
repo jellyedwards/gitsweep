@@ -1,5 +1,17 @@
 # Change Log
 
+## 1.0.3 (preview)
+
+### Security / Chore
+
+- Migrate from the deprecated `vsce` package to `@vscode/vsce` and from
+  `vscode-test` to `@vscode/test-electron` (their renames). Clears the
+  `xml2js`, `markdown-it` and `@tootallnate/once` advisories pulled in
+  by the stale chains and drops two deprecation warnings on `npm install`
+- Add an `overrides` block to force `diff` ≥ 8.0.3 and
+  `serialize-javascript` ≥ 7.0.5 under mocha so the remaining mocha
+  transitive advisories clear without waiting on upstream
+
 ## 1.0.2 (preview)
 
 ### Security / Chore

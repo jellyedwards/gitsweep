@@ -7,7 +7,7 @@
     "color": "#C80000",
     "theme": "dark"
   },
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "jellyedwards",
   "license": "MIT",
   "preview": true,
@@ -182,14 +182,17 @@
     "build": "vsce package"
   },
   "devDependencies": {
-    "@types/glob": "^7.1.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.10.5",
     "@types/vscode": "^1.63.0",
-    "glob": "^7.1.6",
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.2.2",
+    "glob": "^11.0.0",
     "mocha": "^11.7.5",
-    "typescript": "^5.7.3",
-    "vsce": "^2.7.0",
-    "vscode-test": "^1.3.0"
+    "typescript": "^5.7.3"
+  },
+  "overrides": {
+    "diff": "^8.0.3",
+    "serialize-javascript": "^7.0.5"
   }
 }
