@@ -1,5 +1,25 @@
 # Change Log
 
+## 1.0.2 (preview)
+
+### Security / Chore
+
+- Bump `mocha` 9 → 11 (clears serialize-javascript / nanoid /
+  minimatch / js-yaml / diff advisories pulled in by the old mocha
+  chain)
+- Bump `typescript` 3.8 → 5.7 and `@types/node` 10 → 22 (also
+  `@types/mocha` 5 → 10, `@types/vscode` → 1.63 to match `engines`)
+- Remove the deprecated `tslint` dev dependency and its unused
+  `tslint.json` config
+
+### Fix
+
+- Widen the locally-inferred `type` variable in `refresh()` so TS 5's
+  stricter literal narrowing doesn't reject the `concat` of assumed-
+  unchanged and excluded entries
+- Drop the removed `mocha.useColors` call from the test runner and
+  pass `color: true` to the `Mocha` constructor instead
+
 ## 1.0.1 (preview)
 
 ### Fix
