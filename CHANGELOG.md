@@ -1,9 +1,16 @@
 # Change Log
 
-## 1.0.2 (preview)
+## 1.0.2
+
+First stable release since 0.0.15. Includes the 1.0.1 fixes below.
 
 ### Security / Chore
 
+- Replace deprecated `vsce` with `@vscode/vsce` 4 and `vscode-test` with
+  `@vscode/test-electron`; bump `glob` to 11 and pin patched `diff` /
+  `serialize-javascript` via `overrides` (`npm audit`: 0 vulnerabilities)
+- Stop packaging Visual Studio `.vs/` state and `README orig.md` in the
+  `.vsix`
 - Bump `mocha` 9 → 11 (clears serialize-javascript / nanoid /
   minimatch / js-yaml / diff advisories pulled in by the old mocha
   chain)
